@@ -2,6 +2,20 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+class TitleCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=100)
+    synopsis: str = Field(min_length=1)
+    type: Literal["movie", "series"]
+    release_year: int = Field(ge=1888, le=2100)
+    poster_url: str | None = Field(default=None, max_length=500)
+    genre_ids: list[int] = Field(min_length=1)
+
+
+class TitleUpdate(TitleCreate):
+    pass
+
 
 class TitleResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)

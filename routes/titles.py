@@ -1,12 +1,12 @@
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from database import get_db
 from models import Title, Genre
-from schemas import TitleResponse
+from schemas import TitleResponse, TitleUpdate, TitleCreate
 
 
 router = APIRouter(
@@ -15,6 +15,64 @@ router = APIRouter(
 )
 
 DbSession = Annotated[Session, Depends(get_db)]
+
+
+def find_title(session: Session, title_id: int) -> Title:
+    statement = (
+        select(Title)
+        .options(selectinload(Title.genres))
+        .where(Title.id == title_id)
+    )
+
+    title = session.scalar(statement)
+
+    if title is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Título no encontrado"
+        )
+
+    return title
+
+def find_genres(session: Session, genre_ids: list[int]) -> list[Genre]:
+    if len(genre_ids) != len(set(genre_ids)):
+        raise HTTPException(
+            status_code=422,
+            detail="No se permiten géneros duplicados"
+        )
+
+    genres = session.scalars(
+        select(Genre).where(Genre.id.in_(genre_ids))
+    ).all()
+
+    if len(genres) != len(genre_ids):
+        raise HTTPException(
+            status_code=422,
+            detail="Uno o más géneros no existen"
+        )
+
+    return genres
+
+
+def find_genres(session: Session, genre_ids: list[int]) -> list[Genre]:
+    if len(genre_ids) != len(set(genre_ids)):
+        raise HTTPException(
+            status_code=422,
+            detail="No se permiten géneros duplicados"
+        )
+
+    genres = session.scalars(
+        select(Genre).where(Genre.id.in_(genre_ids))
+    ).all()
+
+    if len(genres) != len(genre_ids):
+        raise HTTPException(
+            status_code=422,
+            detail="Uno o más géneros no existen"
+        )
+
+    return genres
+
 
 
 @router.get("", response_model=list[TitleResponse])
@@ -46,3 +104,64 @@ def get_titles(
     statement = statement.order_by(Title.name)
 
     return session.scalars(statement).all()
+
+
+
+@router.get("/{title_id}", response_model=TitleResponse)
+def get_title(title_id: int, session: DbSession):
+    return find_title(session, title_id)
+
+
+
+@router.post(
+    "",
+    response_model=TitleResponse,
+    status_code=status.HTTP_201_CREATED
+)
+def create_title(data: TitleCreate, session: DbSession):
+    genres = find_genres(session, data.genre_ids)
+
+    title = Title(
+        **data.model_dump(exclude={"genre_ids"}),
+        genres=genres
+    )
+
+    session.add(title)
+    session.commit()
+    session.refresh(title, attribute_names=["genres"])
+
+    return title
+
+
+
+@router.put("/{title_id}", response_model=TitleResponse)
+def update_title(
+    title_id: int,
+    data: TitleUpdate,
+    session: DbSession
+):
+    title = find_title(session, title_id)
+    genres = find_genres(session, data.genre_ids)
+
+    for field, value in data.model_dump(
+        exclude={"genre_ids"}
+    ).items():
+        setattr(title, field, value)
+
+    title.genres = genres
+
+    session.commit()
+    session.refresh(title, attribute_names=["genres"])
+
+    return title
+
+@router.delete(
+    "/{title_id}",
+    status_code=status.HTTP_204_NO_CONTENT
+)
+def delete_title(title_id: int, session: DbSession):
+    title = find_title(session, title_id)
+
+    session.delete(title)
+    session.commit()
+
