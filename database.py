@@ -4,6 +4,8 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from collections.abc import Generator
+from sqlalchemy.orm import Session
 
 load_dotenv()
 
@@ -21,3 +23,7 @@ SessionLocal = sessionmaker(
 
 class Base(DeclarativeBase):
     pass
+
+def get_db() -> Generator[Session, None, None]:
+    with SessionLocal() as session:
+        yield session
