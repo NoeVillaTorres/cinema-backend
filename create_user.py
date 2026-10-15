@@ -10,6 +10,16 @@ from models import User
 
 def main():
     email = input("Correo: ").strip().lower()
+
+    if (
+        not email
+        or len(email) > 255
+        or "@" not in email
+        or email.startswith("@")
+        or email.endswith("@")
+    ):
+        print("Introduce un correo electrónico válido.")
+        return
     role = input("Rol (admin/user): ").strip().lower()
 
     if role not in ("admin", "user"):

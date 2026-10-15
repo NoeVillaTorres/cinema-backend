@@ -5,8 +5,6 @@ from sqlalchemy import (
     String, Integer, Text
 )
 
-from sqlalchemy.orm import Mapped, mapped_column
-
 from database import Base
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -59,7 +57,7 @@ class Title(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(
-        String(200), nullable=False
+        String(100), nullable=False
     )
     synopsis: Mapped[str] = mapped_column(
         Text, nullable=False

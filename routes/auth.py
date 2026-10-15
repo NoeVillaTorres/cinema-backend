@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+#from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from auth import (
@@ -21,6 +21,8 @@ DbSession = Annotated[Session, Depends(get_db)]
 
 @router.post("/login", response_model=TokenResponse)
 def login(data: LoginRequest, session: DbSession):
+    email = data.email.strip().lower()
+
     user = session.scalar(
         select(User).where(User.email == data.email)
     )

@@ -3,6 +3,16 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 class TitleCreate(BaseModel):
+    @field_validator("name", "synopsis")
+    @classmethod
+    def validate_text(cls, value: str) -> str:
+        value = value.strip()
+
+        if not value:
+            raise ValueError("El campo no puede estar vacío")
+
+        return value
+
     model_config = ConfigDict(extra="forbid")
 
     name: str = Field(min_length=1, max_length=100)
