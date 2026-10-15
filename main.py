@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from routes.titles import router as titles_router
 from routes.genres import router as genres_router
+from routes.auth import router as auth_router
 
 
 app = FastAPI(
@@ -17,9 +18,10 @@ app.add_middleware(
         "http://127.0.0.1:5173",
     ],
     allow_credentials=False,
-    allow_methods=["GET"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 app.include_router(titles_router)
 app.include_router(genres_router)
+app.include_router(auth_router) 
